@@ -1,3 +1,5 @@
+using Login_System.Data;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,8 @@ builder.Services.AddControllers();
 
 //below i can enter custom name for site Default is v1
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<UserDbContext>(options => options.UseSqlServer("UserDatabase"));
 
 var app = builder.Build();
 
