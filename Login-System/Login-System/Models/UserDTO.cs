@@ -1,4 +1,4 @@
-﻿namespace Login_System
+﻿namespace Login_System.Models
 {
     public class UserDTO
     {

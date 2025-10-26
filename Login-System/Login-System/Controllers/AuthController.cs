@@ -17,7 +17,7 @@ namespace Login_System.Controllers
     [ApiController]
     public class AuthController(IAuthService authService) : ControllerBase
     {
-        
+
 
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDTO request)
@@ -33,14 +33,14 @@ namespace Login_System.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(UserDTO request)
+        public async Task<ActionResult<TokenResponseDto>> Login(UserDTO request)
         {
-            var token = await authService.LoginAsync(request);
-            if (token is null)
+            var result = await authService.LoginAsync(request);
+            if (result is null)
             {
                 return BadRequest("Invalid username Or password.");
             }
-            return Ok(token);
+            return Ok(result);
         }
 
         [Authorize]
@@ -49,7 +49,14 @@ namespace Login_System.Controllers
         {
             return Ok("You are Authenticated! yipee!");
         }
-        
+
+        [Authorize(Roles = "Admin")] // kunne lave 'Admin, x' x = anden rolle.
+        [HttpGet("admin-only")]
+        public IActionResult AdminOnlyEndpoint()
+        {
+            return Ok("You are Authenticated Admin! yipee!");
+        }
+
 
     }
 }
