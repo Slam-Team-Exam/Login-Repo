@@ -6,6 +6,6 @@ namespace Login_System.Services
     public interface IAuthService
     {
         Task<User?> RegisterAsync(UserDTO request);
-        Task<string?> LoginAsync(UserDTO request);
+        Task<TokenResponseDto?> LoginAsync(UserDTO request);
     }
 }
