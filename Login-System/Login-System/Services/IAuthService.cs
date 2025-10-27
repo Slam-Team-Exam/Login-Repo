@@ -7,5 +7,8 @@ namespace Login_System.Services
     {
         Task<User?> RegisterAsync(UserDTO request);
         Task<TokenResponseDto?> LoginAsync(UserDTO request);
+        Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request);
+
+        
     }
 }

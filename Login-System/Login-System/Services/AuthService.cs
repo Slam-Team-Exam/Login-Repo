@@ -31,13 +31,18 @@ namespace Login_System.Services
                 return null;
             }
 
-            var response = new TokenResponseDto
+            
+
+            return await CreateTokenResponse(user);
+        }
+
+        private async Task<TokenResponseDto> CreateTokenResponse(User? user)
+        {
+            return new TokenResponseDto
             {
                 AccessToken = CreateToken(user),
                 RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
             };
-
-            return response;
         }
 
         public async Task<User?> RegisterAsync(UserDTO request)
@@ -60,6 +65,16 @@ namespace Login_System.Services
             return user;
         }
 
+        public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
+        {
+            var user = await ValidateRefreshTokenAsync(request.UserId, request.RefreshToken);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return await CreateTokenResponse(user);
+        }
 
         private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
         {
@@ -70,6 +85,7 @@ namespace Login_System.Services
             }
             return user;
         }
+
 
 
         private string GenerateRefreshToken()
