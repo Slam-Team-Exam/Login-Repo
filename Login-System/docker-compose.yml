@@ -2,7 +2,9 @@ version: '3.9'
 
 services:
   login-system:
-    build: .
+    build:
+      context: ./Login-System      
+      dockerfile: Dockerfile       
     ports:
       - "7282:7282"
     environment:
