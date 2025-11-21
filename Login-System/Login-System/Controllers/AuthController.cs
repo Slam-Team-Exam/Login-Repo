@@ -17,7 +17,11 @@ namespace Login_System.Controllers
     [ApiController]
     public class AuthController(IAuthService authService) : ControllerBase
     {
-
+        [HttpGet("health")]
+        public IActionResult Health()
+        {
+            return Ok();
+        }
 
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(UserDTO request)
