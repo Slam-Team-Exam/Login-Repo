@@ -15,63 +15,36 @@ namespace Login_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController(IAuthService authService) : ControllerBase
+    public class AuthController : ControllerBase
     {
+        private readonly IAuthService _authService;
 
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDTO request)
+        public async Task<IActionResult> Register(UserDTO request)
         {
-            var user = await authService.RegisterAsync(request);
-            if (user is null)
-            {
-                return BadRequest("Username already exisits.");
-            }
+            var created = await _authService.RegisterAsync(request);
 
-            return Ok(user);
+            if (!created)
+                return BadRequest("Username already exists.");
 
+            return Ok("User registered.");
         }
 
-        [HttpPost("login")]
-        public async Task<ActionResult<TokenResponseDto>> Login(UserDTO request)
+        // GET /api/Auth/login?username=x&password=y
+        [HttpGet("login")]
+        public async Task<ActionResult<string>> Login([FromQuery] UserDTO request)
         {
-            var result = await authService.LoginAsync(request);
-            if (result is null)
-            {
-                return BadRequest("Invalid username Or password.");
-            }
-            return Ok(result);
+            var token = await _authService.LoginAsync(request);
+
+            if (token is null)
+                return BadRequest("Invalid username or password.");
+
+            return Ok(token); // (string) JWT token
         }
-
-        [Authorize]
-        [HttpGet]
-        public IActionResult AuthenticatedOnlyEndpoint()
-        {
-            return Ok("You are Authenticated! yipee!");
-        }
-
-
-
-        [HttpPost("refresh-token")]
-        public async Task<ActionResult<TokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
-        {
-            var result = await authService.RefreshTokenAsync(request);
-            if (result is null || result.AccessToken is null || result.RefreshToken is null)
-            {
-                return Unauthorized("Invalid refresh token.");
-            }
-
-            return Ok(result);
-
-        }
-
-        [Authorize(Roles = "Admin")] // kunne lave 'Admin, x' x = anden rolle.
-        [HttpGet("admin-only")]
-        public IActionResult AdminOnlyEndpoint()
-        {
-            return Ok("You are Authenticated Admin! yipee!");
-        }
-
-
     }
 }
