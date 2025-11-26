@@ -33,7 +33,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["AppSettings:Issuer"],
             ValidateAudience = true,
             ValidAudience = builder.Configuration["AppSettings:Audience"],
-            ValidateLifetime = true,
+            // INGEN lifetime-validering
+            ValidateLifetime = false,
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!)),
             ValidateIssuerSigningKey = true

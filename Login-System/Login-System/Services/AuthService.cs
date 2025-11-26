@@ -11,123 +11,77 @@ using System.Text;
 
 namespace Login_System.Services
 {
-    public class AuthService(UserDbContext context, IConfiguration configuration) : IAuthService
+    public class AuthService : IAuthService
     {
-        public async Task<TokenResponseDto?> LoginAsync(UserDTO request)
+        private readonly UserDbContext _context;
+        private readonly IConfiguration _configuration;
+
+        public AuthService(UserDbContext context, IConfiguration configuration)
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-
-            if (user is null)
-            {
-                return null;
-            }
-
-
-            //this is okay for learning but technically with this way a hacker could.
-            //learn that there is a username but the password is wrong.. so maybe it shouldnt say this.
-            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
-                == PasswordVerificationResult.Failed)
-            {
-                return null;
-            }
-
-            
-
-            return await CreateTokenResponse(user);
+            _context = context;
+            _configuration = configuration;
         }
 
-        private async Task<TokenResponseDto> CreateTokenResponse(User? user)
+        public async Task<bool> RegisterAsync(UserDTO request)
         {
-            return new TokenResponseDto
-            {
-                AccessToken = CreateToken(user),
-                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user)
-            };
-        }
-
-        public async Task<User?> RegisterAsync(UserDTO request)
-        {
-            if (await context.Users.AnyAsync(u => u.Username == request.Username))
-            {
-                return null;
-            }
+            // tjek om brugernavn findes
+            if (await _context.Users.AnyAsync(u => u.Username == request.Username))
+                return false;
 
             var user = new User();
 
             var hashedPassword = new PasswordHasher<User>()
                 .HashPassword(user, request.Password);
+
             user.Username = request.Username;
             user.PasswordHash = hashedPassword;
-            context.Users.Add(user);
 
-            await context.SaveChangesAsync();
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-            return user;
+            return true;
         }
 
-        public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
+        public async Task<string?> LoginAsync(UserDTO request)
         {
-            var user = await ValidateRefreshTokenAsync(request.UserId, request.RefreshToken);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == request.Username);
+
             if (user == null)
-            {
                 return null;
-            }
 
-            return await CreateTokenResponse(user);
-        }
+            var result = new PasswordHasher<User>()
+                .VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
-        private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
-        {
-            var user = await context.Users.FindAsync(userId);
-            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            {
+            if (result == PasswordVerificationResult.Failed)
                 return null;
-            }
-            return user;
+
+            return CreateToken(user);
         }
-
-
-
-        private string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
-        }
-
-        private async Task<string> GenerateAndSaveRefreshTokenAsync(User user)
-        {
-            var refreshToken = GenerateRefreshToken();
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(1);
-            await context.SaveChangesAsync();
-            return refreshToken; 
-        }
-
-
 
         private string CreateToken(User user)
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Name, user.Username),
+                // tilføj evt. ClaimTypes.Role hvis vi vil havde Admin senere
             };
 
             var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(configuration.GetValue<string>("Appsettings:Token")!));
+                Encoding.UTF8.GetBytes(_configuration["AppSettings:Token"]!));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
-            //this Hmac requires 512 bits = / 8 = 64 bytes = Token gotta be 64 charactors
+
+            // VIGTIGT: ingen udløbstid (expires = null) – meget usikkert i rigtig verden,
+            
             var tokenDescriptor = new JwtSecurityToken(
-                issuer: configuration.GetValue<string>("AppSettings:Issuer"),
-                audience: configuration.GetValue<string>("AppSettings:Audience"),
+                issuer: _configuration["AppSettings:Issuer"],
+                audience: _configuration["AppSettings:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(1),
+                expires: null, // ingen levetid
                 signingCredentials: creds
-                );
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
         }

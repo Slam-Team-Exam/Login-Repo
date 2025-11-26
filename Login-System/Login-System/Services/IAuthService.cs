@@ -5,10 +5,7 @@ namespace Login_System.Services
 {
     public interface IAuthService
     {
-        Task<User?> RegisterAsync(UserDTO request);
-        Task<TokenResponseDto?> LoginAsync(UserDTO request);
-        Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request);
-
-        
+        Task<bool> RegisterAsync(UserDTO request);      // true/false om det lykkedes
+        Task<string?> LoginAsync(UserDTO request);      // JWT token eller null
     }
 }
