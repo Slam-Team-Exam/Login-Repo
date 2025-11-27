@@ -37,6 +37,17 @@ jobs:
       working-directory: ./Login-System/Login-System
       run: dotnet publish -c Release -o ./publish
 
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.docker_hub_pass }}" | docker login -u "${{ secrets.docker_hub_name }}" --password-stdin
+
     - name: Build Docker image
       working-directory: ./Login-System/Login-System
-      run: docker build . -f Dockerfile -t login-system:$(date +%s)
+      run: |
+        docker build . -f Dockerfile \
+          -t ${{ secrets.docker_hub_name }}/login-system:${VERSION} \
+          -t ${{ secrets.docker_hub_name }}/login-system:latest
+
+    - name: Push Docker image
+      run: |
+        docker push ${{ secrets.docker_hub_name }}/login-system:${VERSION}
+        docker push ${{ secrets.docker_hub_name }}/login-system:latest
