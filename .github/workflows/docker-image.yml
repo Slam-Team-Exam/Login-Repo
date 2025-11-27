@@ -28,6 +28,7 @@ jobs:
           echo "No <Version> found in Login-System.csproj!"
           exit 1
         fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Build .NET project
       working-directory: ./Login-System/Login-System
