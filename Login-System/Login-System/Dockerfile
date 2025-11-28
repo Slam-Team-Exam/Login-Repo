@@ -11,11 +11,10 @@ RUN dotnet publish -c Release -o out
 
 # Use a lightweight runtime image for the final container
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
+RUN apt-get update && apt-get install -y tini
 WORKDIR /app
 COPY --from=build /app/out .
 
-# Expose the port your app runs on
 EXPOSE 7282
 
-# Run the application
-ENTRYPOINT ["dotnet", "Login-System.dll"]
+ENTRYPOINT ["tini", "--", "dotnet", "Login-System.dll"]
