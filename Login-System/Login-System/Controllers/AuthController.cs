@@ -24,6 +24,12 @@ namespace Login_System.Controllers
             _authService = authService;
         }
 
+        [HttpGet("health")]
+        public async Task<IActionResult> Health()
+        {
+            return Ok("Healthy");
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserDTO request)
         {
